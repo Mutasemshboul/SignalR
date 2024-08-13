@@ -1,0 +1,111 @@
+﻿@model ChatViewModel
+
+@{
+    ViewData["Title"] = "Chat";
+}
+
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="~/css/chat.css" rel="stylesheet" />
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-lg-12">
+            <div class="card chat-app">
+                <div id="plist" class="people-list">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fa fa-search"></i></span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Search...">
+                    </div>
+                    <ul class="list-unstyled chat-list mt-2 mb-0">
+                        @foreach (var user in Model.Users)
+                        {
+                            <li class="clearfix" onclick="loadChat('@user.Id')">
+                                <img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="avatar">
+                                <div class="about">
+                                    <div class="name">@user.Email</div>
+                                   
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="chat">
+                    <div class="chat-header clearfix">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <a href="javascript:void(0);" data-toggle="modal" data-target="#view_info">
+                                    <img src="https://bootdey.com/img/Content/avatar/avatar2.png" alt="avatar">
+                                </a>
+                                <div class="chat-about">
+                                    <h6 class="m-b-0">Chat</h6>
+                                    <small>Last seen: 2 hours ago</small>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 hidden-sm text-right">
+                                <a href="javascript:void(0);" class="btn btn-outline-secondary"><i class="fa fa-camera"></i></a>
+                                <a href="javascript:void(0);" class="btn btn-outline-primary"><i class="fa fa-image"></i></a>
+                                <a href="javascript:void(0);" class="btn btn-outline-info"><i class="fa fa-cogs"></i></a>
+                                <a href="javascript:void(0);" class="btn btn-outline-warning"><i class="fa fa-question"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-history" id="chatHistory">
+                        @await Html.PartialAsync("_ChatHistory", Model.Messages)
+                    </div>
+                    <div class="chat-message clearfix">
+                        <div class="input-group mb-0">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fa fa-send"></i></span>
+                            </div>
+                            <input type="text" class="form-control" placeholder="Enter text here..." id="messageInput">
+                            <button class="btn btn-primary">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder().withUrl("/chathub").build();
+
+        connection.on("ReceiveMessage", (user, message) => {
+            displayMessage(user, message);
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+
+        function displayMessage(user, message) {
+            const ul = document.getElementById('messagesList');
+            const li = document.createElement('li');
+            li.classList.add('clearfix');
+            li.innerHTML = `
+                        <div class="message-data text-right">
+                            <span class="message-data-time">${new Date().toLocaleTimeString()}</span>
+                            <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="avatar">
+                        </div>
+                        <div class="message other-message float-right">${message}</div>
+                    `;
+            ul.appendChild(li);
+        }
+
+        function sendPrivateMessage(receiverUserId) {
+            const message = document.getElementById('messageInput').value;
+            connection.invoke("SendPrivateMessage", receiverUserId, message).catch(err => console.error(err.toString()));
+            displayMessage('Me', message); 
+        }
+
+        function loadChat(userId) {
+            $.get('/Home/GetChatWithUser', { userId: userId }, function (data) {
+                $('#chatHistory').html(data);
+
+                const sendButton = document.querySelector('.chat-message .btn-primary');
+                sendButton.onclick = function () { sendPrivateMessage(userId); };
+            });
+        }
+    </script>
+}

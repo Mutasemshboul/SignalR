@@ -1,0 +1,29 @@
+﻿@model IEnumerable<ChatMessage>
+
+@{
+    var currentUserId = ViewBag.CurrentUserId;
+}
+
+<ul class="m-b-0" id="messagesList">
+    @foreach (var message in Model)
+    {
+        <li class="clearfix">
+            @if (message.SenderId == currentUserId)
+            {
+                <div class="message-data text-right">
+                    <span class="message-data-time">@message.Timestamp.ToShortTimeString()</span>
+                    <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="avatar">
+                </div>
+                <div class="message other-message float-right">@message.Message</div>
+            }
+            else
+            {
+                <div class="message-data">
+                    <span class="message-data-time">@message.Timestamp.ToShortTimeString()</span>
+                    <img src="https://bootdey.com/img/Content/avatar/avatar2.png" alt="avatar">
+                </div>
+                <div class="message my-message">@message.Message</div>
+            }
+        </li>
+    }
+</ul>
